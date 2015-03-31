@@ -24,7 +24,7 @@ Banners can be and graphic file such as gif or png. It also supports flash banne
 1. Create a banner in the newly created 'banners' page
 1. Use the following shortcode in your content to load a banner [banner id="*"] where * is the numeric ID of the banner
 1. You can add a zone to your page using [zone id="*"]
-1. You can add banners and zones directly to your template using the functions <?php BannerlidBanner(array("id" => 1)); ?> and <?php BannerlidZone(array("id" => 1)); ?>
+1. You can add banners and zones directly to your template using the functions `<?php BannerlidBanner(array("id" => 1)); ?>` and `<?php BannerlidZone(array("id" => 1)); ?>`
 
 == Frequently Asked Questions ==
 
