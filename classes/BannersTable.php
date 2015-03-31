@@ -94,7 +94,7 @@ class BannersTable extends \WP_List_Table {
             'delete'    => '<a href="'.wp_nonce_url(sprintf('?page=%s&action=%s&id=%s',$_REQUEST['page'],'delete_banner',$item['ID']), 'banner_delete').'">Delete</a>',
         );
 
-        $actions = apply_filters('bannerlid_banneractions', $actions);
+        $actions = apply_filters('bannerlid_banneractions', $actions, $item);
         
         //Return the title contents
         return sprintf('%1$s <span style="color:silver">(id:%2$s)</span>%3$s',
