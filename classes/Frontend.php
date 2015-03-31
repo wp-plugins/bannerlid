@@ -137,7 +137,7 @@ class Frontend {
 		//
 		foreach($banner_list as $banner){
 			$banner_row = $this->banners_obj->get($banner['banner_id']);		
-			$output .= $this->showBanner(array("id" => intval($banner_row['ID']), "width" => $width, "height" => $height));
+			$output .= $this->showBanner(array("id" => intval($banner_row['ID']), "width" => $width, "height" => $height, "zone" => $zone->data['ID']));
 		}
 
 		return $output;
@@ -166,7 +166,7 @@ class Frontend {
 		do_action('bannerlid_showbanner', $banner );
 
 		if(!empty($banner->data['url']))
-			$link = $this->makeLink($banner->data['ID']);	
+			$link = $this->makeLink($banner->data['ID'], $atts['zone']);	
 
 		//
 		// If we have a flash file
@@ -213,8 +213,11 @@ class Frontend {
 	 * @param (int) $banner_id ID of clicked banner
 	 * @return (str) href link
 	*/
-	public function makeLink($banner_id){
+	public function makeLink($banner_id, $zone_id=null){
 		$link = home_url() . '?bannerlidlink='.$banner_id;
+		if(!is_null($zone_id)){
+			$link .= '&zone=' . $zone_id;
+		}
 		return $link;
 	}
 
@@ -237,6 +240,11 @@ class Frontend {
 		
 		if(empty($banner->data['url']))
 			return;
+
+		if(isset($_GET['zone'])){
+			$zone_id = intval($_GET['zone']);
+			$this->stats->addBannerStat("zone_click", $zone_id, get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
+		}
 
 		$this->stats->addBannerStat("banner_click", $banner_id, get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
 		do_action('bannerlid_redirect', $banner );
