@@ -1,0 +1,50 @@
+select[multiple] {
+    height: auto;
+    width: 25em;
+}
+
+#banner_preview {
+	padding: 8px;
+}
+
+#banner_preview img {
+	border: 2px solid #ccc;
+	max-width: 284px;
+	max-height: 100px;
+}
+
+.bannerlid-info-panel{
+	color: #333;
+	border: 1px solid #e6db55;
+	background: #ffffe0;
+	padding: 12px;
+	width: 300px;
+}
+
+#sortable li{
+	border: 1px solid #f0f0f0;
+	text-align: center;
+	padding: 8px;
+}
+
+.chart_wrapper{
+	margin: 1%;
+	padding: 2%;
+	background: #fff;
+}
+
+.chart_full{
+	width: 100%;
+	height: 300px;
+}
+
+.chart_half{
+	float: left;
+	width: 44%;
+	height: 300px;
+}
+
+.chart_canvas {
+	width: 100%;
+	height: 100%;
+}
