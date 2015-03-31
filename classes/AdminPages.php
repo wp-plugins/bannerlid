@@ -93,7 +93,7 @@ class AdminPage {
     */
     public function addPage()
     {
-        add_menu_page( __($this->getTitle(), $this->getSlug()), __($this->getTitle(), $this->getSlug()), 'manage_options', $this->getSlug(), array($this, 'render'), null, 60 );
+        add_menu_page( __($this->getTitle(), $this->getSlug()), __($this->getTitle(), $this->getSlug()), 'manage_options', $this->getSlug(), array($this, 'render'), 'dashicons-media-interactive', 60 );
     }
 
     /**
