@@ -97,9 +97,10 @@ class ZonesTable extends \WP_List_Table {
         $actions = array(
             'edit'      => sprintf('<a href="?page=%s&subpage=%s&id=%s">Edit</a>',$_REQUEST['page'],'edit_zone',$item['ID']),
             'delete'    => '<a href="'.wp_nonce_url(sprintf('?page=%s&action=%s&id=%s',$_REQUEST['page'],'delete_zone',$item['ID']), 'zone_delete').'">Delete</a>',
-
         );
         
+        $actions = apply_filters('bannerlid_zoneactions', $actions);
+
         //Return the title contents
         return sprintf('%1$s <span style="color:silver">(id:%2$s)</span>%3$s',
             /*$1%s*/ $item['name'],
