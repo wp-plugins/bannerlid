@@ -11,34 +11,48 @@ Simple banner management plugin.
 
 == Description ==
 
-Bannerlid provides a simple Wordpress admin extension to create banners and groups of banners. Banners can be added through content shortcodes or functions in your template files.
+Bannerlid provides a simple Wordpress admin extension to add banners and groups of banners to your Wordpress template or your Wordpress content. Banners can be added through content shortcodes or functions in your template files.
 
-The plugin also tracks clicks and impressions in a stats table in the database. At the moment there is no interface to view the stats. This feature will be added soon.
+The plugin also tracks clicks and impressions and displays the data in html5 charts in wp-admin. Stats include who's been clicking, when and where from.
 
 Banners can be standard graphic file such as gif or png. It also supports flash banners, although these can cause speed and compatibility issues.
 
+The plugin does not facilitate the selling of banners or banner space. I created this to be a simple Banner management system that provided clients with simplicity and important stats rather than to try and do too much. 
+
+The plugin comes with some basic filters and hook actions for customization.
+
 == Installation ==
 
-1. Upload `bannerlid` directory to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Create a banner in the newly created 'banners' page
-1. Use the following shortcode in your content to load a banner [banner id="*"] where * is the numeric ID of the banner
-1. You can add a zone to your page using [zone id="*"]
-1. You can add banners and zones directly to your template using the functions `<?php BannerlidBanner(array("id" => 1)); ?>` and `<?php BannerlidZone(array("id" => 1)); ?>`
+1. Copy bannerlid directory to your wp-content/plugins directory.
+1. In wp-admin go to Plugins > Installed Plugins
+1. Find 'Banner Boss' and click 'Activate'
+2. See instruction.txt in the plugin root for more instructions
 
 == Frequently Asked Questions ==
-
-= Where are the stats? =
-
-The stats are stored in the table _bannerlid_stats. 
 
 = What is flash support like? =
 
 Basic flash support is provided. The plugin can show flash banners and hyperlinks can be used on them, however this requires some CSS and has not been tested on older browsers. Also, flash can cause speed/stability issues.  
 
+= Does the plugin have banner fade/transitions? =
+
+No, I have kept the plugin as basic as possible so that the user can add his own transitions / slides or whatever by using one of the libraries already out there. The banners are wrapped in divs with classes so you should be able to apply jquery to them easily.
+
+= Does the plugin support text/html banners =
+
+I've been thinking about this one and it's something I might add in so users can add in html for Google Ads etc. If there are requests for this I'll add it.
+
+= What stats does it collect? =
+
+The system collects banner and zone clicks and impressions as well as the time, WP user, country, ip and date of the action.
+
 
 
 == Changelog ==
+
+= 1.1.0 =
+* Added statistics reporting using chartjs
+* Added start and end publish dates
 
 = 1.0.0 =
 * First release
