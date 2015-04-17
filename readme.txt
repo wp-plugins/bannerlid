@@ -25,7 +25,7 @@ The plugin comes with some basic filters and hook actions for customization.
 
 1. Copy bannerlid directory to your wp-content/plugins directory.
 1. In wp-admin go to Plugins > Installed Plugins
-1. Find 'Banner Boss' and click 'Activate'
+1. Find 'Bannerlid' and click 'Activate'
 2. See instruction.txt in the plugin root for more instructions
 
 == Frequently Asked Questions ==
