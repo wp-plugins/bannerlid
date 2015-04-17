@@ -5,7 +5,9 @@ namespace Bannerlid;
 /**
  * Provides methods for settings and accessing option data
  *
- * @author Barry Mason
+ * @package    Bannerlid
+ * @subpackage Bannerlid/classes
+ * @author Weblid
  */
 class Options {
 

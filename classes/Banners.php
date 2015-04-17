@@ -7,7 +7,8 @@ namespace Bannerlid;
  *
  * @since      1.0.0
  * @package    Bannerlid
- * @author     Barry Mason <barrywebla@googlemail.com>
+ * @subpackage Bannerlid/classes
+ * @author     Weblid <barrywebla@googlemail.com>
  */
 class Banners {
 
@@ -20,6 +21,11 @@ class Banners {
 	* Name of the table that holds the banner/zone relation
 	*/
 	private $relation_table = 'bannerlid_relations';
+
+		/**
+	* Name of the table that holds the banner/zone relation
+	*/
+	private $banner_post_relation_table = 'bannerlid_banner_post_relations';
 
 	/**
 	* Wordpress db dependency
@@ -56,14 +62,24 @@ class Banners {
 	}
 
 	/**
+	* Gets the table name for the banner / posts relations
+	*
+	* @access public
+	*/
+	public function getPostsRelationTableName(){
+		return $this->db->base_prefix . $this->banner_post_relation_table;
+	}
+
+	/**
 	* Gets a single banner by it's id
 	*
 	* @access public
-	* @param int id of the banner to get
+	* @param (int) $id of the banner to get
 	* @return array - Single banner
 	*/
 	public function get($id){
-		$result = $this->db->get_row("SELECT * FROM ".$this->getTableName() . " WHERE ID = " . $id, ARRAY_A); 
+		$query = $this->db->prepare("SELECT * FROM ".$this->getTableName() . " WHERE ID = %d", $id);
+		$result = $this->db->get_row($query, ARRAY_A); 
 		return $result;
 	}
 
@@ -71,16 +87,17 @@ class Banners {
 	* Gets a single banner by it's slug
 	*
 	* @access public
-	* @param str slug of the banner to get
+	* @param (str) $slug of the banner to get
 	* @return array - Single banner
 	*/
 	public function getBySlug($slug){
-		$result = $this->db->get_row("SELECT * FROM ".$this->getTableName() . " WHERE slug = '" . $slug . "'", ARRAY_A); 
+		$query = $this->db->prepare("SELECT * FROM ".$this->getTableName() . " WHERE slug = '%s'", $slug);
+		$result = $this->db->get_row($query, ARRAY_A); 
 		return $result;
 	}
 
 	/**
-	* Gets a list of the current zones in the database
+	* Gets a list of the current banners in the database
 	*
 	* @access public
 	* @return array - List of all of the current zones
@@ -91,27 +108,92 @@ class Banners {
 	}
 
 	/**
-	* Gets a list of the current zones in the database
+	* Adds a banner to the database
 	*
 	* @access public
 	* @return $last_id (int) ID of last inserted banner
 	*/
-	public function add($name, $slug=null, $file, $url=null, $new_window=null, $width=null, $height=null){
-		$data = array( 'name' => $name, 'slug' => $slug,'file' => $file, 'url' => $url, 'new_window' => $new_window, 'width' => $width, 'height' => $height);
-		$this->db->insert( $this->getTableName(), $data);
+	public function add($name, $slug=null, $file, $url=null, $new_window=null, $width=null, $height=null, $live_date=null, $end_date=null){
+		
+		$data = array( 
+			'name' => $name, 
+			'slug' => $slug,
+			'file' => $file, 
+			'url' => $url, 
+			'new_window' => $new_window, 
+			'width' => $width, 
+			'height' => $height, 
+			'live_date' => $live_date, 
+			'end_date' => $end_date
+		);
+
+		$this->db->insert( $this->getTableName(), $data, array('%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s',));
 		return $this->db->insert_id;
 	}
 
 	/**
-	* Adds records to the zone / banner relation table
+	* Adds data to the post relations table to signify which pages a banner
+	* is to be shown on if not shown on all
 	*
 	* @access public
+	* @param (int) $id of the banner
+	* @param (array) $post_ids arra of the post ids to show the banner on
+	* @return void
+	*/
+	public function addPostRelations($id, $post_ids){
+		if(!empty($post_ids))
+		{
+			foreach($post_ids as $post)
+			{
+				$this->db->insert( $this->getPostsRelationTableName(), array( 'banner_id' => $id, 'post_id' => $post), array('%d', '%d'));	
+			}
+		}
+	}
+
+	/**
+	* Deletes the relations from the banner/post relations
+	* @access public
+	* @param $banner_id The ID of the banners to delete
+	* @return void
+	*/
+	public function deletePostRelations($banner_id){
+		$this->db->delete( $this->getPostsRelationTableName(), array( 'banner_id' => $banner_id ), array( '%d' ) );
+	}
+
+	/**
+	* Get's array of posts that the banner is related to
+	*
+	* @access public
+	* @param (int) $banner_id The ID of the banner
+	* @return void
+	*/
+	public function getPostRelations($banner_id){
+
+		$query = $this->db->prepare("SELECT * FROM ".$this->getPostsRelationTableName() . " WHERE banner_id = %d", $banner_id);
+		$results = $this->db->get_results($query, ARRAY_A); 
+		if(!empty($results)){
+			return $results;
+		} else {
+			return false;
+		}
+		
+	}
+
+	/**
+	* Adds records to the zone / banner relation table which tells
+	* the system which banners are in which zones.
+	*
+	* @access public
+	* @param (int) $id of the banner
+	* @param (array) $zone_ids arra of the zone_ids to put the banner in
 	* @return void
 	*/
 	public function addRelations($id, $zone_ids){
-		if(!empty($zone_ids)){
-			foreach($zone_ids as $zone){
-				$this->db->insert( $this->getRelationTableName(), array( 'banner_id' => $id, 'zone_id' => $zone));	
+		if(!empty($zone_ids))
+		{
+			foreach($zone_ids as $zone)
+			{
+				$this->db->insert( $this->getRelationTableName(), array( 'banner_id' => $id, 'zone_id' => $zone), array('%d', '%d'));	
 			}
 		}
 	}
@@ -120,11 +202,13 @@ class Banners {
 	* Get's array of zone relations from given banner_id
 	*
 	* @access public
-	* @param $banner_id The ID of the banner
+	* @param (int) $banner_id The ID of the banner
 	* @return void
 	*/
 	public function getRelations($banner_id){
-		$results = $this->db->get_results("SELECT * FROM ".$this->getRelationTableName() . " WHERE banner_id = '" . $banner_id . "' ORDER BY position, id ASC", ARRAY_A); 
+
+		$query = $this->db->prepare("SELECT * FROM ".$this->getRelationTableName() . " WHERE banner_id = %d ORDER BY position, id ASC", $banner_id);
+		$results = $this->db->get_results($query, ARRAY_A); 
 		return $results;
 	}
 
@@ -136,7 +220,8 @@ class Banners {
 	* @return void
 	*/
 	public function getRelationsByZone($zone_id){
-		$results = $this->db->get_results("SELECT * FROM ".$this->getRelationTableName() . " WHERE zone_id = '" . $zone_id ."' ORDER BY position, id ASC", ARRAY_A); 
+		$query = $this->db->prepare("SELECT * FROM ".$this->getRelationTableName() . " WHERE zone_id = '%d' ORDER BY position, id ASC", $zone_id);
+		$results = $this->db->get_results($query, ARRAY_A); 
 		return $results;
 	}
 
@@ -152,7 +237,8 @@ class Banners {
 
 	public function updateZonePositions(array $positions){
 	
-		if(!empty($positions)){
+		if(!empty($positions))
+		{
 			$i = 1;
 			foreach($positions as $position){
 				$result = $this->db->update( $this->getRelationTableName(), 
@@ -182,9 +268,9 @@ class Banners {
 	* @access public
 	* @return bool
 	*/
-	public function update($id, $name, $slug=null, $file, $url=null, $new_window=null, $width=null, $height=null){
+	public function update($id, $name, $slug=null, $file, $url=null, $new_window=null, $width=null, $height=null, $live_date=null, $end_date=null){
 		$result = $this->db->update( $this->getTableName(), 
-			array( 'name' => $name, 'slug' => $slug,'file' => $file, 'url' => $url, 'new_window' => $new_window, 'width' => $width, 'height' => $height), 
+			array( 'name' => $name, 'slug' => $slug,'file' => $file, 'url' => $url, 'new_window' => $new_window, 'width' => $width, 'height' => $height, 'live_date' => $live_date, 'end_date' => $end_date), 
 			array('ID' => $id), 
 			array('%s', '%s', '%s', '%s', '%d'), 
 			array('%d') 
@@ -207,9 +293,10 @@ class Banners {
 
 
 /**
-* Extends the Banners class and provides another level of abstraction 
-* to banner functions. This class provides a blueprint for a real world
-* banner as opposed to Banners which provides the business functions
+ * Extends the Banners class and provides another level of abstraction 
+ * to banner functions. This class provides a blueprint for a real world
+ * banner as opposed to Banners which provides the business functions
+ *
  * @since      1.0.0
  * @package    Bannerlid
  * @author     Barry Mason <barrywebla@googlemail.com>
@@ -242,15 +329,18 @@ class Banner extends Banners {
 		
 		parent::__construct();
 
-		if(is_array($banner_id)){
+		if(is_array($banner_id))
+		{
 			$banner_id = $banner_id['id'];
 		}
 
-		if(is_int($banner_id)){
+		if(is_int($banner_id))
+		{
 			$this->data  = $this->get($banner_id);
 		}
 
-		if(is_string($banner_id)){
+		if(is_string($banner_id))
+		{
 			$banner_slug = $banner_id;
 			$this->data = $this->getBySlug($banner_slug);
 		}
@@ -281,6 +371,46 @@ class Banner extends Banners {
 	}
 
 	/**
+	* Checks the banner/post relation table to 
+	* see if the is limited to which pages it's on
+	*
+	* @access public
+	*/
+	public function checkOnPage(){
+		$post_id = get_the_ID();
+		
+		$relations = $this->getPostRelations($this->data['ID']);
+		$post_sequential=array();
+    	if(!empty($relations))
+	    	$c = array_map(function($val) use (&$post_sequential){ $post_sequential[] = $val['post_id']; }, $relations);  
+		if(in_array($post_id, $post_sequential) || empty($post_sequential)){
+			return true;
+		} else {
+			return false;
+		}
+		
+	}
+
+	/**
+	* Checks if the banner is live according to publish/unpublish dates
+	*
+	* @access public
+	* @param int id of the banner
+	* @return bool - Published or not
+	*/
+	public function checkBannerPublished(){
+		$now = date("Y-m-d H:i:s");
+		
+		$this->data['live_date'] == "0000-00-00 00:00:00" || $this->data['live_date'] < $now ? $publish = true : $publish = false;
+		$this->data['end_date'] == "0000-00-00 00:00:00" || $this->data['end_date'] > $now ? $unpublish = true : $unpublish = false;
+
+		if($publish && $unpublish)
+			return true;
+		else
+			return false;
+	}
+
+	/**
 	* Gets the image or the flash file of the banner
 	*
 	* @access public
@@ -290,30 +420,65 @@ class Banner extends Banners {
 	*/
 	public function getBannerImage($width=null, $height=null){
 
-        if($this->data['file']){
-        	$output = '';
-            if($this->getFileType() !== "swf"){ 
+        if($this->data['file'])
+        {
 
-            	if(!is_null($width) || !is_null($height)){
+			$output = '';        	
+        	
+        	//
+        	// Check the publish dates of the banner
+        	//	
+        	if(!$this->checkBannerPublished())
+        		return;
+
+        	//
+        	// If it's not a flash file then output as image
+        	//
+            if($this->getFileType() !== "swf")
+            { 
+
+            	//
+            	// See if we have any overriding h/w dimensions and if we have
+            	// then we apply an inline css style
+            	//
+            	if(!is_null($width) || !is_null($height))
+            	{
             		$width > 1 ? $width = 'max-width:'.$width . 'px; ' : $width = null;
             		$height > 1 ? $height = 'max-height:'.$height . 'px; ' : $height = null;
-            	} else {
-            		if($this->data['width'] > 1) $width = 'width="'.$this->data['width'];
-            		if($this->data['height'] > 1) $height = 'height="'.$this->data['height'];
+            	} 
+            	else 
+            	{
+            		if($this->data['width'] > 1) $width = 'max-width: '.$this->data['width'] . "px";
+            		if($this->data['height'] > 1) $height = 'max-height: '.$this->data['height'] . "px";
             	}
 
-                $output .= '<img src="'.$this->data['file'].'" style="'.$width.$height.'" />';
+            	//Output html
+                $output .= '<img src="'.$this->data['file'].'" class="bannerlid-banner bannerlid-img" style="'.$width.$height.'" alt="'.$this->data['name'].'" />'. "\n";
 
-            } else {
+            } 
+        	//
+        	// If it is a flash file
+        	//
+            else {
+
+            	// Get the proper dimensions of the flash file
             	$swf_info = getimagesize($this->data['file']);
             	$width > 1 ? $width = $width : $width = $swf_info[0];
             	$height > 1 ? $height = $width : $height = $swf_info[1];
 
+            	// If there is a url then we need to put the flash file under our clickable div
             	if(!empty($this->data['url']))
+            	{
 	            	$style = 'position: relative; z-index: -1; pointer-events: none;"';
+            	}
             	
-                $output .= '<object width="'.$width.'" height="'.$height.'" style="'.$style.'"><param name="movie" value="'.$this->data['file'].'"></embed></object>';
+            	//Output html
+                $output .= '<object width="'.$width.'" height="'.$height.'" style="'.$style.'">' . "\n";
+                $output .= '<param name="movie" value="'.$this->data['file'].'"></embed>' . "\n";
+                $output .= '</object>'. "\n";
+
             }
+
             return $output;
         }
 	}
@@ -326,12 +491,16 @@ class Banner extends Banners {
 	*/
 	public function showPreview(){
 
-        if($this->data['file']){
+        if($this->data['file'])
+        {
         	$output = '';
-            if($this->getFileType() !== "swf"){ 
-                $output .= '<img src="'.$this->data['file'].'" height="50px" />&nbsp;';
-            } else {
-                $output .= '<img src="'.plugins_url( '/assets/img/swf_icon.png', dirname(__FILE__) ).'" height="50px" />&nbsp;';
+            if($this->getFileType() !== "swf")
+            { 
+                $output .= '<img src="'.$this->data['file'].'" class="banner-preview" style="max-width: 200px; max-height: 50px;" alt="'.__('Banner Preview', 'bannerlid') .'" />&nbsp;';
+            } 
+            else 
+            {
+                $output .= '<img src="'.plugins_url( '/assets/img/swf_icon.png', dirname(__FILE__) ).'" class="banner-preview" height="50px" alt="'.__('Banner Preview', 'bannerlid') .'" />&nbsp;';
             }
             return $output;
         }

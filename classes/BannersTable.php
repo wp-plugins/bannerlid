@@ -9,6 +9,7 @@ if(!class_exists('WP_List_Table')){
 
 class BannersTable extends \WP_List_Table {
     
+    //!!!! Better way to inject these?
     protected $banner_obj;
 
     function __construct(){
@@ -21,32 +22,20 @@ class BannersTable extends \WP_List_Table {
             'ajax'      => false        //does this table support ajax?
         ) );
 
+        //!!!! Better way to inject these?
         $this->banner_obj = new Banners();
         
     }
 
 
-    /** ************************************************************************
-     * Recommended. This method is called when the parent class can't find a method
-     * specifically build for a given column. Generally, it's recommended to include
-     * one method for each column you want to render, keeping your package class
-     * neat and organized. For example, if the class needs to process a column
-     * named 'title', it would first see if a method named $this->column_title() 
-     * exists - if it does, that method will be used. If it doesn't, this one will
-     * be used. Generally, you should try to use custom column methods as much as 
-     * possible. 
-     * 
-     * Since we have defined a column_title() method later on, this method doesn't
-     * need to concern itself with any column with a name of 'title'. Instead, it
-     * needs to handle everything else.
-     * 
-     * For more detailed insight into how columns are handled, take a look at 
-     * WP_List_Table::single_row_columns()
-     * 
+    /** 
+     * This method is called when the parent class can't find a method
+     * specifically build for a given column. 
+     *
      * @param array $item A singular item (one full row's worth of data)
      * @param array $column_name The name/slug of the column to be processed
      * @return string Text or HTML to be placed inside the column <td>
-     **************************************************************************/
+    */
     function column_default($item, $column_name){
         switch($column_name){
         	case 'ID':
@@ -60,6 +49,7 @@ class BannersTable extends \WP_List_Table {
                 $output = '';
                 $zones = array();
                 foreach($this->banner_obj->getRelations($item['ID']) as $item){
+                   
                     $zone = new Zone($item['zone_id']);
                     $zones[] = $zone->data['slug'];
                 }
@@ -70,42 +60,38 @@ class BannersTable extends \WP_List_Table {
     }
 
 
-    /** ************************************************************************
-     * Recommended. This is a custom column method and is responsible for what
+    /**
+     * This is a custom column method and is responsible for what
      * is rendered in any column with a name/slug of 'title'. Every time the class
      * needs to render a column, it first looks for a method named 
      * column_{$column_title} - if it exists, that method is run. If it doesn't
      * exist, column_default() is called instead.
      * 
-     * This example also illustrates how to implement rollover actions. Actions
-     * should be an associative array formatted as 'slug'=>'link html' - and you
-     * will need to generate the URLs yourself. You could even ensure the links
-     * 
-     * 
      * @see WP_List_Table::::single_row_columns()
      * @param array $item A singular item (one full row's worth of data)
      * @return string Text to be placed inside the column <td> (movie title only)
-     **************************************************************************/
+    */
     function column_title($item){
         
         //Build row actions
         $actions = array(
             'edit'      => sprintf('<a href="?page=%s&subpage=%s&id=%s">Edit</a>',$_REQUEST['page'],'edit_banner',$item['ID']),
             'delete'    => '<a href="'.wp_nonce_url(sprintf('?page=%s&action=%s&id=%s',$_REQUEST['page'],'delete_banner',$item['ID']), 'banner_delete').'">Delete</a>',
+            'stats'     => '<a href="?page=bannerlid&subpage=Overview&id='.$item['ID'].'">Stats</a>'
         );
 
         $actions = apply_filters('bannerlid_banneractions', $actions, $item);
         
         //Return the title contents
-        return sprintf('%1$s <span style="color:silver">(id:%2$s)</span>%3$s',
+        return sprintf('%1$s <span style="color:silver">%2$s</span>%3$s',
             /*$1%s*/ stripslashes($item['name']),
-            /*$2%s*/ $item['ID'],
+            /*$2%s*/ '[banner id="'.$item['ID'].'"]',
             /*$3%s*/ $this->row_actions($actions)
         );
     }
 
 
-    /** ************************************************************************
+    /**
      * REQUIRED if displaying checkboxes or using bulk actions! The 'cb' column
      * is given special treatment when columns are processed. It ALWAYS needs to
      * have it's own method.
@@ -113,7 +99,7 @@ class BannersTable extends \WP_List_Table {
      * @see WP_List_Table::::single_row_columns()
      * @param array $item A singular item (one full row's worth of data)
      * @return string Text to be placed inside the column <td> (movie title only)
-     **************************************************************************/
+    */
     function column_cb($item){
         return sprintf(
             '<input type="checkbox" name="%1$s[]" value="%2$s" />',
@@ -123,19 +109,15 @@ class BannersTable extends \WP_List_Table {
     }
 
 
-    /** ************************************************************************
+    /** 
      * REQUIRED! This method dictates the table's columns and titles. This should
      * return an array where the key is the column slug (and class) and the value 
      * is the column's title text. If you need a checkbox for bulk actions, refer
      * to the $columns array below.
      * 
-     * The 'cb' column is treated differently than the rest. If including a checkbox
-     * column in your table you must create a column_cb() method. If you don't need
-     * bulk actions or checkboxes, simply leave the 'cb' entry out of your array.
-     * 
      * @see WP_List_Table::::single_row_columns()
      * @return array An associative array containing column information: 'slugs'=>'Visible Titles'
-     **************************************************************************/
+    */
     function get_columns(){
         $columns = array(
             'cb'        => '<input type="checkbox" />', //Render a checkbox instead of text
@@ -148,20 +130,13 @@ class BannersTable extends \WP_List_Table {
 
 
 
-    /** ************************************************************************
-     * Optional. If you need to include bulk actions in your list table, this is
+    /** 
+     * If you need to include bulk actions in your list table, this is
      * the place to define them. Bulk actions are an associative array in the format
      * 'slug'=>'Visible Title'
      * 
-     * If this method returns an empty value, no bulk action will be rendered. If
-     * you specify any bulk actions, the bulk actions box will be rendered with
-     * the table automatically on display().
-     * 
-     * Also note that list tables are not automatically wrapped in <form> elements,
-     * so you will need to create those manually in order for bulk actions to function.
-     * 
      * @return array An associative array containing all the bulk actions: 'slugs'=>'Visible Titles'
-     **************************************************************************/
+    */
     function get_bulk_actions() {
 
         $actions = array(
@@ -171,13 +146,13 @@ class BannersTable extends \WP_List_Table {
     }
 
 
-    /** ************************************************************************
-     * Optional. You can handle your bulk actions anywhere or anyhow you prefer.
+    /** 
+     * You can handle your bulk actions anywhere or anyhow you prefer.
      * For this example package, we will handle it in the class to keep things
      * clean and organized.
      * 
      * @see $this->prepare_items()
-     **************************************************************************/
+    */
     function process_bulk_action() {
 
         //Detect when a bulk action is being triggered...
@@ -193,8 +168,8 @@ class BannersTable extends \WP_List_Table {
     }
 
 
-    /** ************************************************************************
-     * REQUIRED! This is where you prepare your data for display. This method will
+    /** 
+     * This is where you prepare your data for display. This method will
      * usually be used to query the database, sort and filter the data, and generally
      * get it ready to be displayed. At a minimum, we should set $this->items and
      * $this->set_pagination_args(), although the following properties and methods
@@ -207,7 +182,7 @@ class BannersTable extends \WP_List_Table {
      * @uses $this->get_sortable_columns()
      * @uses $this->get_pagenum()
      * @uses $this->set_pagination_args()
-     **************************************************************************/
+    */
     function prepare_items() {
         global $wpdb; //This is used only if making any database queries
 
@@ -256,9 +231,6 @@ class BannersTable extends \WP_List_Table {
          */
         
         $data = $this->banner_obj->getList();
-        
-        
-        
         
         
         /***********************************************************************

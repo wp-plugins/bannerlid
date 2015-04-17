@@ -7,7 +7,9 @@ namespace Bannerlid;
  * hooks and actions. 
  *
  * @since      1.0.0
- * @author     Barry Mason <barrywebla@googlemail.com>
+ * @package    Bannerlid
+ * @subpackage Bannerlid/classes
+ * @author     Weblid <barrywebla@googlemail.com>
  */
 class Frontend {
 
@@ -62,8 +64,6 @@ class Frontend {
 	 *
 	 * @since 1.0.0
 	 * @access public
-	 * @param (Banners) Instance of Banners model class
-	 * @param (Zones) Instance of Zones model class
 	 * @return instance of slef class
 	 */
 	public static function instance() {
@@ -74,7 +74,7 @@ class Frontend {
 	}
 
 	/**
-	 * Registers shortcodes with Wordpress and designates 
+	 * Registers frontend shortcodes with Wordpress and designates 
 	 * methods to action
 	 *
 	 * @since 1.0.0
@@ -86,7 +86,8 @@ class Frontend {
 	}
 
 	/**
-	 * Registers actions 
+	 * Registers actions that will occur frontend before
+	 * any screen output.
 	 *
 	 * @since 1.0.0
 	 * @access public
@@ -96,12 +97,12 @@ class Frontend {
 	}
 
 	/**
-	 * Outputs a zone's banners 
+	 * Outputs a zone as html
 	 *
 	 * @since 1.0.0
+	 * @access public
 	 * @see setupShortcodes()
 	 * @param (array) $atts  Attributes as sent with shortcode
-	 * @access public
 	 * @return (str) Zone html
 	*/
 	public function showZone($atts){
@@ -110,15 +111,11 @@ class Frontend {
 		isset($atts['height']) ? $height =  $atts['height'] : $height = null;
 
 		$zone = new Zone($atts);
-		
-		$output = '';
-
 		$banner_list = $zone->getBanners();
 
 		if(empty($banner_list)){
 			return;
 		}
-
 		//
 		// If it's a randomized zone then we'll sliace a random value 
 		// from our banner array
@@ -127,18 +124,28 @@ class Frontend {
 			$random = rand(0, count($zone->getBanners()));
 			$banner_list = array_slice($zone->getBanners(), $random-1, 1);
 		}
+
+		//
+		// Get the client side country for our stats
+		//
+		$client_ip = $this->getClientIp();
+		$country_finder = new CountryFinder($client_ip);
+		$country = $country_finder->getCountryString();
+
 		// Add the impression statistic
-		$this->stats->addBannerStat("zone_impression", $zone->data['ID'], get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
-
-		do_action('bannerlid_showzone', $zone );
+		$this->stats->addBannerStat("zone_impression", $zone->data['ID'], get_current_user_id(), $client_ip, $this->getClientBrowser(), $country);
+		do_action('bannerlid_showzone', $zone->data );
 
 		//
-		// Output the banners
+		// Output the banners' html by skipping through each banner and getting it
+		// from the frontend banner show method in this class
 		//
+		$output = '<div class="bannerlid-zone-container">' . "\n";
 		foreach($banner_list as $banner){
 			$banner_row = $this->banners_obj->get($banner['banner_id']);		
 			$output .= $this->showBanner(array("id" => intval($banner_row['ID']), "width" => $width, "height" => $height, "zone" => $zone->data['ID']));
 		}
+		$output .= '</div>' . "\n";
 
 		return $output;
 	}
@@ -160,14 +167,37 @@ class Frontend {
 		isset($atts['height']) ? $height =  $atts['height'] : $height = null;
 
 		$banner = new Banner($atts);
+		//
+		// Check if the user has stipulated which posts to 
+		// show the banner on
+		//
+		if($banner->checkOnPage() == false)
+			return;
+
+		//
+		// 
 		$banner->data['new_window'] == 1 ? $new_window = 'target = "_blank"' : $new_window='';
-		$this->stats->addBannerStat("banner_impression", $banner->data['ID'], get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
 
-		do_action('bannerlid_showbanner', $banner );
+		//
+		// Get the client side country for our stats
+		//
+		$client_ip = $this->getClientIp();
+		$country_finder = new CountryFinder($client_ip);
+		$country = $country_finder->getCountryString();
 
-		if(!empty($banner->data['url']))
-			$link = $this->makeLink($banner->data['ID'], $atts['zone']);	
+		// Add the impression statistic
+		$this->stats->addBannerStat("banner_impression", $banner->data['ID'], get_current_user_id(), $client_ip, $this->getClientBrowser(), $country);
 
+		do_action('bannerlid_showbanner', $banner->data );
+
+		// Get the banner's hyperlink if added
+		if(!empty($banner->data['url'])){
+			if(!isset($atts['zone']))
+				$zone = null;
+			else
+				$zone = $atts['zone'];
+			$link = $this->makeLink($banner->data['ID'], $zone);	
+		}
 		//
 		// If we have a flash file
 		//
@@ -178,16 +208,17 @@ class Frontend {
 			// top of the flash object or the click will not be registered.
 			//
 			if(isset($link)) $link_style = 'display: inline-block; position: relative; z-index: 1;';
-
 			if(isset($link_style)){
-				return '<a style="'.$link_style.'" href="'.$link.'" '.$new_window.'><span>'.$banner->getBannerImage($width, $height).'</span></a>';
+				$html = '<a style="'.$link_style.'" href="'.$link.'" '.$new_window.'><span>'.$banner->getBannerImage($width, $height).'</span></a>';
 			} 
 			//
 			// If there is no link then we don't wrap the flash object and the 
 			// flash file internal link will be clickable.
 			//
 			else {
-				return $banner->getBannerImage($width, $height);
+				$html = '<div class="bannerlid-banner-container">' . "\n";
+				$html .= $banner->getBannerImage($width, $height);
+				$html = '</div>' . "\n";
 			}
 		}
 		//
@@ -195,12 +226,17 @@ class Frontend {
 		// 
 		else {
 			if(isset($link)){
-				return '<a href="'.$link.'" '.$new_window.'>'.$banner->getBannerImage($width, $height).'</a>';
+				$html = '<div class="bannerlid-banner-container">'. "\n";
+				$html .= '<a href="'.$link.'" '.$new_window.'>'.$banner->getBannerImage($width, $height).'</a>';
+				$html .= '</div>' . "\n";
 			} else {
-				return $banner->getBannerImage($width, $height);
+				$html = '<div class="bannerlid-banner-container">'. "\n";
+				$html .= $banner->getBannerImage($width, $height);
+				$html .= '</div>' . "\n";
 			}
 		}
-		
+		$html = apply_filters( 'bannerlid_banner_html', $html);
+		return $html;
 	}
 
 	/**
@@ -213,11 +249,12 @@ class Frontend {
 	 * @param (int) $banner_id ID of clicked banner
 	 * @return (str) href link
 	*/
-	public function makeLink($banner_id, $zone_id=null){
+	public static function makeLink($banner_id, $zone_id=null){
 		$link = home_url() . '?bannerlidlink='.$banner_id;
 		if(!is_null($zone_id)){
 			$link .= '&zone=' . $zone_id;
 		}
+		$link = apply_filters( 'bannerlid_make_link', $link);
 		return $link;
 	}
 
@@ -233,22 +270,38 @@ class Frontend {
 	public function doRedirect(){
 
 		if(!isset($_GET['bannerlidlink']))
-			return;
+			return;	
+		// 
+		// Get country with IP
+		//
+		$client_ip = $this->getClientIp();
+		$country_finder = new CountryFinder($client_ip);
+		$country = $country_finder->getCountryString();
 
-		$banner_id = $_GET['bannerlidlink'];
+		//
+		// Get banner data
+		//
+		$banner_id = intval($_GET['bannerlidlink']);
 		$banner = new Banner($banner_id);
-		
 		if(empty($banner->data['url']))
 			return;
-
+		//
+		// Add zone stat
+		//
 		if(isset($_GET['zone'])){
 			$zone_id = intval($_GET['zone']);
-			$this->stats->addBannerStat("zone_click", $zone_id, get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
+			$this->stats->addBannerStat("zone_click", $zone_id, get_current_user_id(), $client_ip, $this->getClientBrowser(), $country);
 		}
-
-		$this->stats->addBannerStat("banner_click", $banner_id, get_current_user_id(), $this->getClientIp(), $this->getClientBrowser());
-		do_action('bannerlid_redirect', $banner );
+		//
+		// Add banner stat
+		//
+		$this->stats->addBannerStat("banner_click", $banner_id, get_current_user_id(), $client_ip, $this->getClientBrowser(), $country);
 		
+		do_action('bannerlid_redirect', $banner->data['url'] );
+		
+		//
+		// Do the redirect
+		$banner->data['url'] = apply_filters( 'bannerlid_redirect_url', $banner->data['url']);
 		wp_redirect($banner->data['url']);
 		exit();
 	}
@@ -268,6 +321,7 @@ class Frontend {
 			} else {
 			    $user_ip = $_SERVER['REMOTE_ADDR'];
 		}
+		
 		return $user_ip;
 	}
 
@@ -276,7 +330,7 @@ class Frontend {
 	 *
 	 * @since 1.0.0
 	 * @access private
-	 * @return (str) Users' IP
+	 * @return (str) Users' Browser
 	*/
 	private function getClientBrowser() 
 	{ 
@@ -339,7 +393,7 @@ class Frontend {
 	    }
 	    
 	    if ($version==null || $version=="") {$version="?";}
-	
+		
 	    return array(
 	        'userAgent' => $u_agent,
 	        'name'      => $bname,

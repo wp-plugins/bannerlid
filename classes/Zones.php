@@ -5,7 +5,9 @@ namespace Bannerlid;
 /**
  * Provides methods for settings and accessing zone data
  *
- * @author Barry Mason
+ * @package    Bannerlid
+ * @subpackage Bannerlid/classes
+ * @author Weblid
  */
 class Zones {
 
@@ -161,7 +163,6 @@ class Zone extends Zones {
 	}
 
 	public function getBanners(){
-		
 		return $this->banners;
 	}
 }

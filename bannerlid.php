@@ -1,21 +1,18 @@
 <?php 
 /**
- * The plugin bootstrap file
- *
- * This file is read by WordPress to generate the plugin information in the plugin
- * admin area. This file also includes all of the dependencies used by the plugin,
- * registers the activation and deactivation functions, and defines a function
- * that starts the plugin.
+ * This is our core file where we instantiate the main class which runs our
+ * plugin and also define a few important global functions and activation
+ * and deactivation hooks.
  *
  * @since             1.0.0
  * @package           Bannerlid
  *
  * @wordpress-plugin
- * Plugin Name:       Banner Lid
+ * Plugin Name:       Bannerlid
  * Description:       Simple banner/advert management system with stats and flash support.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Weblid
- * Author URI:        http://twitter.com/web_la/
+ * Author URI:        http://www.weblid.net
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       bannerlid
@@ -80,9 +77,16 @@ function BannerlidZone($params) {
 *  ACTIVATION HOOKS
 *****************************************/
 
+/**
+ * Creates the necessary mysql tables for the plugin 
+ *
+ * @see register_activation_hook()
+ */
 function bannerlid_install() {
    	global $wpdb;
  	
+   	check_system();
+
  	$banners_table = $wpdb->base_prefix . 'bannerlid_banners';
 
  	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -98,6 +102,9 @@ function bannerlid_install() {
 		  	`new_window` tinyint(3) unsigned NOT NULL,
 		  	`width` smallint(6) unsigned NULL,
 		  	`height` smallint(6) unsigned NULL,
+		  	`live_date` datetime NOT NULL,
+		  	`end_date` datetime NOT NULL,
+		  	`published` tinyint(3) unsigned NOT NULL,
 		  	PRIMARY KEY (`ID`)
 		);";
 		
@@ -158,6 +165,21 @@ function bannerlid_install() {
 		dbDelta($sql);
 	}
 
+	$pages_table = $wpdb->base_prefix . 'bannerlid_banner_post_relations';
+
+	if($wpdb->get_var("show tables like '$pages_table'") != $pages_table) 
+	{
+		$sql = "CREATE TABLE " . $pages_table . " (
+			`ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`banner_id` int(10) unsigned NOT NULL,
+			`post_id` int(10) unsigned NOT NULL,
+			PRIMARY KEY (`ID`),
+			KEY `banner_id` (`banner_id`,`post_id`)
+		);";
+		
+		dbDelta($sql);
+	}
+
 	add_option('bannerlid-collect-stats', 'true');
 	add_option('bannerlid-enable-flash', 'true');
 	add_site_option('bannerlid-version', BANNERLID_VERSION);
@@ -176,3 +198,17 @@ function bannerlid_remove() {
 }
 // run the install scripts upon plugin activation
 register_deactivation_hook(__FILE__,'bannerlid_remove');
+
+/**
+ * Perfoprmed at installation, this just checks the user
+ * has the correct version of PHP and has GD library installed
+ */
+function check_system(){
+	if(!function_exists('getimagesize')){
+		die("<p>".__("GD Library must be installed", "bannerlid")."</p>");
+	}
+	if (version_compare(phpversion(), "5.2.0", "<")) { 
+	  die("<p>".__("PHP 5.3 or above must be installed", "bannerlid")."</p>");
+	} 
+}
+?>
