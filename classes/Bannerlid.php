@@ -106,7 +106,7 @@ class Bannerlid {
 	public function __construct() {
 
 		$this->plugin_name = 'Bannerlid';
-		$this->version = '1.0.0';
+		$this->version = '1.1.0';
 		$this->environment();
 
 	}
