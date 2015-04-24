@@ -1,0 +1,72 @@
+Installation
+===================
+
+1. Copy bannerlid directory to your wp-content/plugins directory.
+2. In wp-admin go to Plugins > Installed Plugins
+3. Find 'Bannerlid' and click 'Activate'
+
+
+Adding banners
+===================
+1. Click the new 'Banners' option in your wp-admin
+2. Clcik 'Add New'
+3. Fill out the form details and select your banner from the WP Media Library
+4. Click 'save'
+
+Showing banners
+===================
+There are two ways you can show a banner on your site. Either using a shortcode in the Wordpress editor or using PHP in your template files.
+
+Shortcode
+---------
+1. Edit the page or post in wp-admin
+2. In the Wordpress content editor, enter the shortode in the following format
+    [banner id="{id}" width="*" height="*"]
+
+    Where {id} is the ID of the banner you want to show. Width and height are optional override atrributes. 
+3. Save your page/post
+
+PHP
+---
+1. In your template file, add the following code where you want the banner to show
+	<?php 
+	$params = array("ID" => {id}); 
+	BannerlidBanner($params); 
+	?>
+
+	Where {id} is the ID of the banner you want to show. Width and height are optional override atrributes. 
+2. Save post/page
+
+Adding Zones
+===================
+1. Go to Banners > Zones in your wp-admin
+2. Clcik 'Add New'
+3. Fill out the form details
+4. Click 'save'
+5. To add banners to the zone, go to 'Banners' and edit each banner you want to add to the zone an select that zone in the 'Zones' input box
+
+Showing zones
+===================
+There are two ways you can show a zone on your site. Either using a shortcode in the Wordpress editor or using PHP in your template files.
+
+Shortcode
+---------
+1. Edit the page or post in wp-admin
+2. In the Wordpress content editor, enter the shortode in the following format
+    [zone id="{id}"]
+
+    Where {id} is the ID of the zone you want to show.
+3. Save your page/post
+
+PHP
+---
+1. In your template file, add the following code where you want the banner to show
+	<?php 
+	$params = array("ID" => {id}); 
+	BannerlidZone($params); 
+	?>
+
+	Where {id} is the ID of the zone you want to show. 
+2. Save post/page
+
+

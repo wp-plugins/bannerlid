@@ -2,7 +2,6 @@
 
 namespace Bannerlid;
 
-
 /**
  * The core plugin class.
  *
@@ -11,7 +10,8 @@ namespace Bannerlid;
  *
  * @since      1.0.0
  * @package    Bannerlid
- * @author     Barry Mason <barrywebla@googlemail.com>
+ * @subpackage Bannerlid/classes
+ * @author     Weblid <barrywebla@googlemail.com>
  */
 class Bannerlid {
 
@@ -106,8 +106,7 @@ class Bannerlid {
 	public function __construct() {
 
 		$this->plugin_name = 'Bannerlid';
-		$this->version = '1.0.0';
-
+		$this->version = '1.1.1';
 		$this->environment();
 
 	}
@@ -137,6 +136,8 @@ class Bannerlid {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Template.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Banners.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/BannersTable.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Chart.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/CountryFinder.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Frontend.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Options.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'classes/Stats.php';
@@ -152,6 +153,7 @@ class Bannerlid {
 	 * @access private
 	 */
 	private function environment(){
+
 		add_action( 'admin_init', array($this, 'load_admin_js') );
 		add_action( 'admin_init', array($this, 'load_admin_css') );
 		add_action( 'admin_init', array($this, 'textdomains') );
@@ -185,7 +187,15 @@ class Bannerlid {
 		wp_enqueue_media();
         wp_enqueue_script('media_button', plugins_url( '../js/media.js', __FILE__ ), array('jquery'), $this->version, true);
         wp_enqueue_script('jquery_ui', 'https://code.jquery.com/ui/1.11.4/jquery-ui.min.js', array('jquery'), '1.11.4', true);
-        wp_enqueue_script('sorting', plugins_url( '../js/sorting.js', __FILE__ ), array('jquery', 'jquery_ui'), $this->version, true);      
+        wp_enqueue_script('bannerlid-sorting', plugins_url( '../js/sorting.js', __FILE__ ), array('jquery', 'jquery_ui'), $this->version, true);    
+
+        wp_enqueue_script('jquery-ui-datepicker');
+        wp_enqueue_script('jquery-ui-timepicker', plugins_url( '../js/Timepicker-1.5.2/timepicker.js', __FILE__ ), array('jquery', 'jquery-ui-datepicker'), $this->version, true);
+        wp_enqueue_script('bannerlid-forms', plugins_url( '../js/form.js', __FILE__ ), array('jquery', 'jquery_ui'), $this->version, true);    
+
+        wp_enqueue_script('chart_js', plugins_url( '../js/Chart.js-master/Chart.js', __FILE__ ), array('jquery'), $this->version, true);
+        wp_enqueue_script('bannerlid-chart', plugins_url( '../js/chart.js', __FILE__ ), array('jquery', 'chart_js'), $this->version, true);
+
     }
 
 	/**
@@ -197,7 +207,10 @@ class Bannerlid {
 	 * @access public
 	 */
     public function load_admin_css() {
+    	wp_enqueue_style('jquery-style', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/themes/smoothness/jquery-ui.css');
+    	wp_enqueue_style('timepicker-style', plugins_url( '../js/Timepicker-1.5.2/timepicker.css', __FILE__ ));
 		wp_enqueue_style( 'bannerlid-admin-css', plugins_url( '../assets/css/admin.css', __FILE__ ), null, $this->version );
+
     }
 
 	/**
@@ -211,17 +224,21 @@ class Bannerlid {
 	 * @access private
 	 */
 	private function loadAdminPages(){
+
 		$this->banners_obj = new Banners();
-		$admin_page = new AdminPage('Banners', 'banner-lid', 'AdminBanners', $this->banners_obj);
+		$admin_page = new AdminPage('Banners', 'bannerlid', 'AdminBanners', $this->banners_obj);
 		$admin_page->register();
 
 		$this->zones_obj = new Zones();
-		$zones_page = new AdminSubPage('banner-lid', 'Zones', 'banner-lid-zones', 'AdminZones', $this->zones_obj );
+		$zones_page = new AdminSubPage('bannerlid', 'Zones', 'bannerlid-zones', 'AdminZones', $this->zones_obj );
 		$zones_page->register();
-
+		/*
 		$this->options_obj = new Options();
-		$zones_page = new AdminSubPage('banner-lid', 'Options', 'banner-lid-options', 'AdminOptions', $this->options_obj );
+		$zones_page = new AdminSubPage('bannerlid', 'Options', 'bannerlid-options', 'AdminOptions', $this->options_obj );
 		$zones_page->register();
+		*/
+		$admin_page = new AdminSubPage('bannerlid', 'Stats', 'bannerlid-stats', 'AdminStats', null );
+		$admin_page->register();
 
 
 	}
@@ -239,7 +256,6 @@ class Bannerlid {
 	}
 
 	/**
-	* !!!! To move & make an option
 	* Callback to allow the upload of swf files
 	*
 	* @see environment()
@@ -248,13 +264,13 @@ class Bannerlid {
 	*/
 	public function allow_mimes($mimes) {
 		
-		if(get_option('bannerlid-enable-flash') != 'true')
-			return;
+		//if(get_option('bannerlid-enable-flash') != 'true')
+		//	return;
 
-		$mimes = array(
-				'swf' => 'application/x-shockwave-flash',
-		);
+		$mimes['swf'] = 'application/x-shockwave-flash';
 		return $mimes;
 	}
+
+
 
 }

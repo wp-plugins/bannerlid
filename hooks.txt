@@ -1,0 +1,19 @@
+There are a few filter and action hooks availabe in the plugin if you need to extend it for any reason. 
+
+Available Action Hooks
+======================
+Action Tag                   | Args                      | Description
+-----------------------------------------------------------------------------------
+bannerlid_showzone          | An array of zone data     | Fired just before the zone starts to output it's html
+bannerlid_showbanner        | An array of banner data   | Fired just before the banner starts to output it's html
+bannerlid_redirect          | The url of the endpoint   | Fired just before the user is redirected
+
+
+Available Filters
+======================
+Filter Tag                   | Args                      | Description
+-----------------------------------------------------------------------------------
+bannerlid_redirect_url      | URL String of the endpoint| Allows you to modify the endpoint after a user clicks a banner
+bannerlid_banner_html       | Banner html string        | Allows modification of banner output html
+bannerlid_make_link         | The redirector link string| Modification of forwarding url which is visited before the users is sent to final end point url after banner clicked
+

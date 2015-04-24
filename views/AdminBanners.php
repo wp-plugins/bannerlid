@@ -1,9 +1,5 @@
 <?php
 
-isset($_GET['subpage']) ? $subpage = $_GET['subpage'] : $subpage = null;
-isset($_GET['action']) ? $action = $_GET['action'] : $action = null;
-isset($_GET['id']) ? $id = $_GET['id'] : $id = null;
-
 $output = '';
 
 //
@@ -26,6 +22,9 @@ switch($action){
         !empty($_GET['url']) ? $url = sanitize_text_field($_GET['url']) : $url = null;
         !empty($_GET['zone_ids']) ? $zone_ids = $_GET['zone_ids'] : $zone_ids = null;
         !empty($_GET['new_window']) ? $new_window = $_GET['new_window'] : $new_window=0;
+        !empty($_GET['live_date']) ? $live_date = $_GET['live_date'] : $live_date=0;
+        !empty($_GET['end_date']) ? $end_date = $_GET['end_date'] : $end_date=0;
+        !empty($_GET['banner_posts']) ? $banner_posts = $_GET['banner_posts'] : $banner_posts=null;
 
         if(is_null($name) || is_null($file)){
             add_settings_error('banner', esc_attr( 'settings_updated' ), __("Fill in all the details", 'bannerlid'), "error");
@@ -53,12 +52,16 @@ switch($action){
         // new record.
         //
         if($id){
-            $dataobj->update($id, $name, $slug, $file, $url, $new_window, $width, $height);
+            $dataobj->update($id, $name, $slug, $file, $url, $new_window, $width, $height, $live_date, $end_date);
             $dataobj->deleteRelations($id);
             $dataobj->addRelations($id, $zone_ids);
+
+            $dataobj->deletePostRelations($id);
+            $dataobj->addPostRelations($id, $banner_posts);
         } else {
-            $new_banner_id = $dataobj->add($name, $slug, $file, $url, $new_window, $width, $height);
+            $new_banner_id = $dataobj->add($name, $slug, $file, $url, $new_window, $width, $height, $live_date, $end_date);
             $dataobj->addRelations($new_banner_id, $zone_ids);
+            $dataobj->addPostRelations($id, $banner_posts);
         }
 
         //
@@ -100,119 +103,34 @@ switch($action){
 // Show the wrrors
 //
 settings_errors('banner');
+?>
 
+<div class="wrap">
+    
+<?php
 //
-// Pages html
+// Pick page
 //
 switch($subpage){
- 
+    case "Overview":
+        self::showTabs(array("Overview", "Users", "Countries"));
+        include self::getViewPath() . 'AdminBannersOverview.php';
+    break;
+    case "Users":
+        self::showTabs(array("Overview", "Users", "Countries"));
+        include self::getViewPath() . 'AdminBannersUsers.php';
+    break;
+    case "Countries":
+        self::showTabs(array("Overview", "Users", "Countries"));
+        include self::getViewPath() . 'AdminBannersCountries.php';
+    break;
     case "edit_banner":
-
-        if($id){
-            $banner_data = $dataobj->get($id);
-            $relations = $dataobj->getRelations($id);
-            $sequential=array();
-            $b = array_map(function($val) use (&$sequential){ $sequential[] = $val['zone_id']; }, $relations);  
-        }
-
-        ?>
-
-        <div id="icon-users" class="icon32"><br/></div>
-        <h2><?php _e('Add / Edit Banner', 'banner-lid');?></h2>
-        
-        <form method="get" action="<?php echo admin_url( 'admin.php'); ?>">
-            <table class="banner-lid-zone-edit-form form-table">
-                <tbody>
-                    <tr>
-                        <th><?php _e('Banner name', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? stripslashes($banner_data['name']) : '';?>" name="name" class="regular-text" /></td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Slug', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? $banner_data['slug'] : '';?>" name="slug" class="regular-text" /></td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Banner', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? $banner_data['file'] : '';?>" name="file" id="file_url" class="regular-text" />
-                            <a href="#" id="add-media" class="button">Add banner</a>
-                            <div id="banner_preview">
-                                <?php if(!empty($banner_data['file'])): ?>
-                                    <?php
-                                    $banner = new Bannerlid\Banner($banner_data['ID']);
-                                    echo $banner->getBannerImage(350);
-                                    ?>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Link', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? $banner_data['url'] : '';?>" name="url" class="regular-text" /></td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Width override', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? $banner_data['width'] : '';?>" name="width" class="regular-text" />px</td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Height override', 'bannerlid'); ?></th>
-                        <td><input type="text" value="<?php echo isset($banner_data) ? $banner_data['height'] : '';?>" name="height" class="regular-text" />px</td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Zones', 'bannerlid'); ?></th>
-                        <td>
-                            <?php    
-                            $zone_obj = new Bannerlid\Zones();
-                            $zones = $zone_obj->getList();
-                            ?>
-                            <select name="zone_ids[]" id="zone_ids" multiple="true">
-                                <?php if(!empty($zones)) : ?>
-                                    <?php foreach($zones as $zone): ?>
-                                        <?php in_array($zone['ID'], $sequential) ? $selected = 'selected' : $selected = ''; ?>
-                                       <option <?php echo $selected;?> value="<?php echo $zone['ID'];?>"><?php echo $zone['name'];?></option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><?php _e('Open in new window?', 'bannerlid'); ?></th>
-                        <td><input type="checkbox" value="1" name="new_window" <?php echo isset($banner_data['new_window']) == 1 ? 'checked' : '';?> /></td>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <td>
-                            <input type="hidden" value="banner-lid" name="page" />
-                            <input type="hidden" name="subpage" value="edit_banner" />
-                            <input type="hidden" name="action" value="banner_process" />
-                            <input type="hidden" name="id" value="<?php echo isset($id) ? $id : '';?>" />
-                            <?php wp_nonce_field( 'banner_process' ); ?>
-                            <input class="button-primary" type="submit" name="submit" value="<?php _e( 'Save' ); ?>" />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </form>
-        <?php
-       
+        include self::getViewPath() . 'AdminBannersEdit.php';
     break;
     default:
-        ?>
-        <div class="wrap">
-            <div id="icon-users" class="icon32"><br/></div>
-            <h2><?php echo __('Banners', 'bannerlid'); ?>
-                <a href="<?php echo admin_url( 'admin.php');?>?page=banner-lid&amp;subpage=edit_banner" class="add-new-h2">Add New</a>
-            </h2>
-            <?php
-            //Create an instance of our package class...
-            $testListTable = new Bannerlid\BannersTable();
-            $testListTable->prepare_items();
-            ?>
-            <form id="movies-filter" method="get">
-                <input type="hidden" name="page" value="<?php echo $_REQUEST['page'];?>" />
-                <?php echo $testListTable->display(); ?>
-            </form>
-        </div>
-        <?php
+        include self::getViewPath() . 'AdminBannersDefault.php';
     break;
 }
 ?>
+
+</div>
