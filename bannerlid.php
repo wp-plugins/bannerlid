@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name:       Bannerlid
  * Description:       Simple banner/advert management system with stats and flash support.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Author:            Weblid
  * Author URI:        http://www.weblid.net
  * License:           GPL-2.0+
