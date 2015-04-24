@@ -3,7 +3,7 @@ Contributors: web_lid
 Tags: banners, ads, adverts
 Requires at least: 3.8
 Tested up to: 4.3
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,9 @@ The system collects banner and zone clicks and impressions as well as the time, 
 
 
 == Changelog ==
+
+= 1.1.1 =
+* Fixed issues with missing files
 
 = 1.1.0 =
 * Added statistics reporting using chartjs
